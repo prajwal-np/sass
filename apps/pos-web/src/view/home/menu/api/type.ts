@@ -4,16 +4,17 @@ export type TProduct = {
   image: string;
   name: string;
   price: number;
+  quantity?: number;
   updated_at: string;
 };
 
 export type TCategory = {
-  id: number;
+  id: string;
   name: string;
   products: TProduct[];
 };
 
-export type TCartItem = TProduct & { quantity: number };
+export type TCartItem = TProduct & { quantity: number; note: string };
 export type TCart = {
   total: number;
   subTotal: number;
@@ -32,9 +33,9 @@ export type TOrderRequest = {
 };
 
 export type TOrder = {
-  id: number;
+  id: string;
   status: string;
-  products: TProduct[];
+  products: TCartItem[];
   totalAmount: number;
   subTotal: number;
   tax: number;

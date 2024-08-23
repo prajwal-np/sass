@@ -1,41 +1,76 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { In, Repository } from 'typeorm';
-import { CreateOrder, UpdateOrder } from './dto';
-import { Product } from 'src/entity/Product.entity';
-import { Order } from 'src/entity/order.entity';
+import { In } from 'typeorm';
+import { CreateOrder, IPlaceOrder, UpdateOrder } from './dto';
+import { Order, Status } from 'src/entity/order.entity';
 import { REQUEST } from '@nestjs/core';
 import { ConnectionService } from '../connection/connection.service';
+import { Table } from 'src/entity/tables.entity';
+import { TableOrder, TableOrderStatus } from 'src/entity/tableOrder.entity';
+import { Products } from 'src/entity/product.entity';
+import { OrderProducts } from 'src/entity/orderProduct.entity';
 
 @Injectable()
 export class OrderService {
-  private orderRepo: Repository<Order>;
-  private productRepo: Repository<Product>;
+  private tenantId: string;
   constructor(
     @Inject(REQUEST) private readonly request,
     private readonly connectionService: ConnectionService,
   ) {
-    const tenantId = this.request.tenantId;
-    const dataSource = this.connectionService.getDataSource(tenantId);
-    dataSource.then((data) => {
-      this.orderRepo = data.getRepository(Order);
-      this.productRepo = data.getRepository(Product);
+    this.tenantId = this.request.tenantId;
+  }
+
+  async placeOrder(payload: IPlaceOrder) {
+    const table = await (
+      await this.connectionService.getRepository(Table, this.tenantId)
+    ).findOneBy({
+      id: payload.tableId,
     });
+    const orderProducts = [];
+    for (let i = 0; i < payload.order.products.length; i++) {
+      const el = payload.order.products[i];
+      const product = await (
+        await this.connectionService.getRepository(Products, this.tenantId)
+      ).findOneBy({
+        id: el.id,
+      });
+      const orderProduct = await (
+        await this.connectionService.getRepository(OrderProducts, this.tenantId)
+      ).save({
+        note: el.note,
+        quantity: el.quantity,
+        product,
+      });
+      orderProducts.push(orderProduct);
+    }
+
+    const order = await (
+      await this.connectionService.getRepository(Order, this.tenantId)
+    ).save({
+      ...payload.order,
+      products: orderProducts,
+      status: Status.DELIVERED,
+    });
+    const orderTable = await (
+      await this.connectionService.getRepository(TableOrder, this.tenantId)
+    ).insert({
+      guests: payload.guests,
+      order: [order],
+      table,
+      status: TableOrderStatus.OCCUPIED,
+    });
+    return orderTable;
   }
 
   async createOrder(payload: CreateOrder): Promise<boolean> {
-    console.log(typeof payload.product);
-
-    console.log(payload);
-
-    await this.orderRepo.save({
+    (await this.connectionService.getRepository(Order, this.tenantId)).insert({
       ...payload,
-      status: 'incoming',
+      status: Status.INCOMING,
     });
     return true;
   }
 
   async updateOrder(payload: Partial<UpdateOrder>): Promise<boolean> {
-    await this.orderRepo.update(
+    (await this.connectionService.getRepository(Order, this.tenantId)).update(
       {
         id: payload.id,
       },
@@ -45,37 +80,55 @@ export class OrderService {
   }
 
   async getOrder(payload: Partial<UpdateOrder>): Promise<Order> {
-    return this.orderRepo.findOneBy({
+    return await (
+      await this.connectionService.getRepository(Order, this.tenantId)
+    ).findOneBy({
       id: payload.id,
     });
   }
 
-  async getOrders(): Promise<Order[]> {
-    return this.orderRepo.find({
+  async getOrders(ids?: string[]): Promise<Order[]> {
+    return (
+      await this.connectionService.getRepository(Order, this.tenantId)
+    ).find({
       relations: ['products'],
+      where: {
+        id: In(ids),
+      },
     });
   }
 
   async getOrdersByStatus(status: string): Promise<Order[]> {
-    return this.orderRepo.find({
-      where: { status: status },
+    return (
+      await this.connectionService.getRepository(Order, this.tenantId)
+    ).find({
+      where: { status: Status[status] },
       relations: ['products'],
+      order: {
+        created_at: 'DESC',
+      },
     });
   }
 
-  async updateStatus(id: number): Promise<Order> {
-    const order = await this.orderRepo.findOneBy({
+  async updateStatus(id: string): Promise<Order> {
+    const order = await (
+      await this.connectionService.getRepository(Order, this.tenantId)
+    ).findOneBy({
       id,
     });
-    if (order.status === 'incoming') {
-      return this.orderRepo.save({
+    if (order.status === Status.INCOMING) {
+      return (
+        await this.connectionService.getRepository(Order, this.tenantId)
+      ).save({
         ...order,
-        status: 'complete',
+        status: Status.COMPLETED,
       });
     } else if (order.status === 'processing') {
-      return this.orderRepo.save({
+      return (
+        await this.connectionService.getRepository(Order, this.tenantId)
+      ).save({
         ...order,
-        status: 'complete',
+        status: Status.COMPLETED,
       });
     }
   }

@@ -1,12 +1,15 @@
 import { useMutation, useQuery } from "react-query";
-import { getOrders, updateOrder } from "../home/menu/api/api";
+import { getOrders, updateOrder } from "../home/Menu/api/api";
 import Typography from "../../@ui/typography";
 import clsx from "clsx";
+import ListAnimation from "../../animation/ListAnimation";
+import useParsePrice from "../../hooks/useParsePrice";
+import Button from "../../@ui/Button";
 type Props = {
   type: string;
 };
 export default function Orders({ type }: Props) {
-  console.log(type);
+  const { parsePrice } = useParsePrice();
   const { data } = useQuery(["orders", type], () => getOrders(type));
   const updateOrderMutate = useMutation({
     mutationFn: updateOrder,
@@ -14,23 +17,27 @@ export default function Orders({ type }: Props) {
   if (!data?.length) return <></>;
   return (
     <div className="bg-white h-full overflow-hidden">
-      <div
-        className={clsx(
+      <ListAnimation
+        containerClass={clsx(
           "justify-between border shadow-md text-center items-center py-10 px-5 grid ",
           type === "complete" ? "grid-cols-5" : "grid-cols-6"
         )}
-      >
-        <Typography text={"Id"} />
-        <Typography text={"Products"} />
-        <Typography text={"Status"} />
-        <Typography text={"Remark"} />
-        <Typography text={"Total amount"} />
-        {type === "complete" ? <></> : <Typography text={"Action"} />}
-      </div>
-      <div className="h-[85%] overflow-auto">
-        {data.map((el, i) => (
+        childrens={(el, i) => <Typography text={el} />}
+        data={[
+          "Id",
+          "Products",
+          "Status",
+          "Remark",
+          "Total amount",
+          type ? "" : "Action",
+        ]}
+        extractKey={(el) => `order-table-${el}`}
+      />
+
+      <ListAnimation
+        containerClass={"h-[85%] overflow-auto"}
+        childrens={(el, i) => (
           <div
-            key={`order-${el.id}`}
             className={clsx(
               "justify-between items-center text-center py-10 px-5 grid",
               i % 2 ? "bg-gray-300" : "",
@@ -45,20 +52,22 @@ export default function Orders({ type }: Props) {
               size="sm"
               text={el.remark}
             />
-            <Typography text={el.totalAmount.toString()} />
+            <Typography text={parsePrice(el.totalAmount)} />
             {type === "complete" ? (
               <></>
             ) : (
-              <button
+              <Button
                 onClick={() => updateOrderMutate.mutate(el.id)}
                 className="bg-blue-500 py-4 rounded-lg text-white"
               >
                 Move to complete
-              </button>
+              </Button>
             )}
           </div>
-        ))}
-      </div>
+        )}
+        data={data}
+        extractKey={(el) => `order-${el.id}`}
+      />
     </div>
   );
 }

@@ -1,24 +1,45 @@
 import {
   Column,
   Entity,
+  JoinColumn,
   JoinTable,
   ManyToMany,
+  ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Product } from './product.entity';
+import { Pro } from './pro.entity';
+import { TableOrder } from './tableOrder.entity';
+import { Products } from './product.entity';
+import { OrderProducts } from './orderProduct.entity';
+// import { RestroTables } from './tables.entity';
 
+export enum PaymentMethod {
+  CASH = 'cash',
+  CARD = 'card',
+  ONLINE = 'online',
+}
+
+export enum Status {
+  INCOMING = 'pending',
+  PROCESSING = 'processing',
+  DELIVERED = 'delivered',
+  COMPLETED = 'completed',
+}
 @Entity()
 export class Order {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column()
-  status: string;
+  @Column('enum', {
+    enum: Status,
+  })
+  status: Status;
 
-  @ManyToMany(() => Product)
-  @JoinTable()
-  products: Product[];
+  @OneToMany(() => OrderProducts, (prod) => prod.order)
+  @JoinColumn()
+  products: OrderProducts[];
 
   @Column()
   totalAmount: number;
@@ -29,8 +50,14 @@ export class Order {
   @Column()
   tax: number;
 
-  @Column()
-  paymentMethod: string;
+  @Column('enum', {
+    enum: PaymentMethod,
+  })
+  paymentMethod: PaymentMethod;
+
+  @ManyToOne(() => TableOrder, (table) => table.order)
+  @JoinColumn()
+  tableOrder: TableOrder;
 
   @Column()
   remark?: string;

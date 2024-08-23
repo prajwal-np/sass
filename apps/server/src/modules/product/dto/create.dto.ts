@@ -8,5 +8,5 @@ export class CreateProduct {
   @ApiProperty()
   image: string;
   @ApiProperty()
-  category: number;
+  category: string;
 }

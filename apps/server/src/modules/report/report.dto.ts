@@ -13,3 +13,17 @@ export class ReportRequest {
   @ApiProperty()
   reportType: string;
 }
+
+export class DateRange {
+  @ApiProperty({
+    type: 'string',
+    default: new Date(),
+  })
+  fromDate: string;
+
+  @ApiProperty({
+    type: 'string',
+    default: new Date(),
+  })
+  toDate: string;
+}

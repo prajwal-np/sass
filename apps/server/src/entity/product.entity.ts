@@ -1,10 +1,21 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Category } from './category.entity';
+import { Order } from './order.entity';
+import { OrderProducts } from './orderProduct.entity';
 
-@Entity('product')
-export class Product {
-  @PrimaryGeneratedColumn()
-  id: number;
+@Entity()
+export class Products {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({
     type: 'timestamp',
@@ -30,5 +41,9 @@ export class Product {
   image: string;
 
   @ManyToOne(() => Category, (cat) => cat.products)
+  @JoinColumn()
   category: Category;
+
+  @OneToMany(() => OrderProducts, (order) => order.product)
+  productOrder: OrderProducts[];
 }

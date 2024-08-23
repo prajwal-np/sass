@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
-    const tenantId = '1';
+    const tenantId = 'tenant_1';
     if (!tenantId) {
       throw new Error('Tenant ID is missing');
     }

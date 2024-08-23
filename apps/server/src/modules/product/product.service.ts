@@ -1,29 +1,30 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { Product } from 'src/entity/Product.entity';
 import { UpdateProduct, CreateProduct } from './dto';
 import { Category } from 'src/entity/category.entity';
 import { REQUEST } from '@nestjs/core';
 import { ConnectionService } from '../connection/connection.service';
+import { Products } from 'src/entity/product.entity';
 
 @Injectable()
 export class ProductService {
-  private productRepo: Repository<Product>;
   private categoryRepo: Repository<Category>;
+  private tenantId: string;
   constructor(
     @Inject(REQUEST) private readonly request,
     private readonly connectionService: ConnectionService,
   ) {
-    const tenantId = this.request.tenantId;
-    const dataSource = this.connectionService.getDataSource(tenantId);
-    dataSource.then((data) => {
-      this.productRepo = data.getRepository(Product);
-      this.categoryRepo = data.getRepository(Category);
-    });
+    try {
+      this.tenantId = this.request.tenantId;
+    } catch (e) {
+      console.log(e);
+    }
   }
 
-  async getProduct(id: number): Promise<Product> {
-    return this.productRepo.findOne({
+  async getProduct(id: string): Promise<Products> {
+    return await (
+      await this.connectionService.getRepository(Products, this.tenantId)
+    ).findOne({
       where: {
         id,
       },
@@ -31,15 +32,24 @@ export class ProductService {
     });
   }
 
-  async getProducts(): Promise<Product[]> {
-    return this.productRepo.find();
+  async getProducts(): Promise<Products[]> {
+    return await (
+      await this.connectionService.getRepository(Products, this.tenantId)
+    ).find();
   }
 
   async createProduct(payload: CreateProduct): Promise<boolean> {
-    const category = await this.categoryRepo.findOneBy({
+    const category = await (
+      await this.connectionService.getRepository(Category, this.tenantId)
+    ).findOneBy({
       id: payload.category,
     });
-    await this.productRepo.insert({
+
+    console.log(category);
+
+    await (
+      await this.connectionService.getRepository(Products, this.tenantId)
+    ).save({
       ...payload,
       category: category,
     });
@@ -47,10 +57,14 @@ export class ProductService {
   }
 
   async updateProduct(payload: UpdateProduct): Promise<boolean> {
-    const category = await this.categoryRepo.findOneBy({
+    const category = await (
+      await this.connectionService.getRepository(Category, this.tenantId)
+    ).findOneBy({
       id: payload.category,
     });
-    await this.productRepo.update(
+    await (
+      await this.connectionService.getRepository(Products, this.tenantId)
+    ).update(
       {
         id: payload.id,
       },

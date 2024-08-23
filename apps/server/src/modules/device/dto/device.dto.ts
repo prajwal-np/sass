@@ -1,7 +1,7 @@
 import { CreateDevice } from './create.dto';
 
 export class Device extends CreateDevice {
-  id: number;
+  id: string;
   user: any;
   code: string;
   status: string;

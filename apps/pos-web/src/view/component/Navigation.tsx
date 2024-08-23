@@ -2,6 +2,9 @@ import { useState } from "react";
 import { MenuIcon, Order, ProcessingIcon } from "../../@ui/icons";
 import Typography from "../../@ui/typography";
 import clsx from "clsx";
+import ListAnimation from "../../animation/ListAnimation";
+import { motion } from "framer-motion";
+
 type Props = {
   activeNav: string;
   setActiveNav: React.Dispatch<React.SetStateAction<string>>;
@@ -21,34 +24,70 @@ export default function Navigation({ activeNav, setActiveNav }: Props) {
       ),
     },
     {
-      name: "complete",
+      name: "completed",
       label: "Completed",
       icon: (props: React.SVGProps<SVGSVGElement>) => <Order {...props} />,
     },
   ];
+  const container = {
+    hidden: { opacity: 1 },
+    visible: {
+      opacity: 1,
+      transition: {
+        delayChildren: 0.1,
+        staggerChildren: 0.2,
+      },
+    },
+  };
   return (
-    <div className=" h-full bg-blue-500 shadow-xl">
-      <ul className="">
+    <div className=" h-full border-r-[1px] bg-white">
+      <motion.div
+        layout
+        variants={container}
+        initial="hidden"
+        animate="visible"
+        className="overflow-hidden p-4"
+      >
         {navigationObj.map((el) => (
-          <li
+          <motion.div
+            whileTap={{
+              scale: 0.9,
+            }}
+            key={el.name}
+            transition={{ duration: 0.1 }}
             onClick={() => setActiveNav(el.name)}
             className={clsx(
-              "flex justify-center border  cursor-pointer transition transition-all flex-col items-center text-center py-10",
-              activeNav === el.name ? "bg-white" : ""
+              " cursor-pointer mb-4  transition-all  text-center p-3 rounded-2xl",
+              activeNav === el.name ? "bg-blue-200  shadow-md" : ""
             )}
-            key={el.name}
           >
-            {el.icon({
-              className: activeNav === el.name ? "text-black" : "text-white",
-            })}
-            <Typography
-              text={el.label}
-              customClass={activeNav === el.name ? "text-black" : "text-white"}
-              size="sm"
-            />
-          </li>
+            <motion.div
+              key={el.name}
+              variants={{
+                hidden: {
+                  scale: 0,
+                },
+                visible: {
+                  scale: 1,
+                },
+              }}
+              whileTap={{
+                scale: 0.9,
+              }}
+              initial="hidden"
+              animate="visible"
+              className="flex text-sm justify-center gap-2 items-center w-full h-full"
+            >
+              {el.icon({
+                className: clsx(
+                  activeNav === el.name ? "text-blue-500" : "text-black",
+                  "w-5"
+                ),
+              })}
+            </motion.div>
+          </motion.div>
         ))}
-      </ul>
+      </motion.div>
     </div>
   );
 }

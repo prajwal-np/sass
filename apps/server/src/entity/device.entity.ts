@@ -9,14 +9,14 @@ import { User } from './user.entity';
 
 @Entity()
 export class Device {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
   status: string;
 
-  @ManyToOne(() => User, (user) => user.devices)
-  @JoinTable()
+  // @ManyToOne(() => User, (user) => user.devices)
+  // @JoinTable()
   user: User;
 
   @Column()

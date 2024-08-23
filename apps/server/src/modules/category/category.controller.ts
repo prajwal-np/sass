@@ -40,7 +40,7 @@ export class CategoryController {
     name: 'id',
     type: 'number',
   })
-  getCategory(@Param() param: { id: number }) {
+  getCategory(@Param() param: { id: string }) {
     return this.categoryService.getCategory(param.id);
   }
 }

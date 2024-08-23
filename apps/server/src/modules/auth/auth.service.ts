@@ -8,41 +8,47 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { CreateUser } from 'src/dto/user/user.dto';
 import { User } from '../../entity/user.entity';
-import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { ConnectionService } from '../connection/connection.service';
-import { Admin } from 'src/entity/admin.entity';
+import {
+  ConnectionService,
+  getTenantConnection,
+} from '../connection/connection.service';
+import { Admin } from 'src/adminEntity/admin.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Connection, DataSource, Repository } from 'typeorm';
+import { CONNECTION } from '../connection/connection.module';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService {
   private saltOrRounds = 10;
-  private userRepo: Repository<User>;
-  private adminRepo: Repository<Admin>;
 
   constructor(
-    // @InjectRepository(User)
-    // private userRepo: Repository<User>,
+    @InjectRepository(Admin)
+    private adminRepo: Repository<Admin>,
     private readonly connectionService: ConnectionService,
+    @Inject(CONNECTION)
+    private connection: DataSource,
     private jwtService: JwtService,
-  ) {
-    const dataSource = this.connectionService.getAdminDataSource();
-    dataSource.then((data) => {
-      if (data) {
-        this.adminRepo = data.getRepository(Admin);
-      }
-    });
+  ) {}
+
+  async userRepo() {
+    return (await this.connectionService.getDataSource('1')).getRepository(
+      User,
+    );
   }
 
   async signIn(
     email: string,
     pass: string,
   ): Promise<{ access_token: string } | null> {
-    const user = await this.userRepo.findOneBy({
+    const adminDataSource = await this.connectionService.getAdminDataSource();
+    const user = await adminDataSource.getRepository(Admin).findOneBy({
       email,
     });
     if (!user) {
       throw new NotFoundException('user not found');
     }
+
     const isMatch = await bcrypt.compare(pass, user?.password);
     if (!isMatch) {
       throw new UnauthorizedException();
@@ -55,22 +61,40 @@ export class AuthService {
   }
 
   async signUp(payload: CreateUser) {
-    const adminDataSource = await this.connectionService.getAdminDataSource();
+    try {
+      // const adminDataSource = await this.connectionService.getAdminDataSource();
 
-    const hashPass = await bcrypt.hash(payload.password, this.saltOrRounds);
-    const user = await adminDataSource.getRepository(Admin).save({
-      ...payload,
-      password: hashPass,
-    });
+      const hashPass = await bcrypt.hash(payload.password, this.saltOrRounds);
+      // const user = await adminDataSource.getRepository(Admin).save();
+      // await this.connectionService.createTenantDatabase(
+      //   user.firstName.toString(),
+      // );
+      // const dataSource = await this.connectionService.getDataSource(
+      //   user.firstName.toString(),
+      // );
+      // return dataSource.getRepository(User).save({
+      //   ...payload,
+      //   password: hashPass,
+      // });
+      const admin = await this.adminRepo.save({
+        ...payload,
+        password: hashPass,
+      });
+      const schemaName = `tenant_1`;
 
-    await this.connectionService.createTenantDatabase(user.id.toString());
-    // Optionally, you can perform additional initialization tasks here
-    const dataSource = await this.connectionService.getDataSource(
-      user.id.toString(),
-    );
-    return dataSource.getRepository(User).save({
-      ...payload,
-      password: hashPass,
-    });
+      this.adminRepo.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}"`);
+      // export const Manager = myDataSource.manager;
+      const myDataSource = await new DataSource(
+        getTenantConnection(schemaName),
+      ).initialize();
+
+      myDataSource.getRepository(User).save({
+        ...payload,
+        password: hashPass,
+      });
+      return admin;
+    } catch (e) {
+      console.log(e);
+    }
   }
 }

@@ -1,7 +1,8 @@
 import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { OrderService } from './order.service';
-import { UpdateOrder, CreateOrder } from './dto';
+import { UpdateOrder, CreateOrder, IPlaceOrder } from './dto';
 import { ApiTags } from '@nestjs/swagger';
+import { Status } from 'src/entity/order.entity';
 
 @ApiTags('Order')
 @Controller()
@@ -13,6 +14,11 @@ export class OrderController {
     return this.orderService.createOrder(payload);
   }
 
+  @Post('/checkout')
+  placeOrder(@Body() payload: IPlaceOrder) {
+    return this.orderService.placeOrder(payload);
+  }
+
   @Put('')
   updateOrder(@Body() payload: UpdateOrder) {
     return this.orderService.updateOrder(payload);
@@ -20,11 +26,11 @@ export class OrderController {
 
   @Put('update_status/:id')
   updateStatus(@Param() payload: any) {
-    return this.orderService.updateStatus(Number(payload.id));
+    return this.orderService.updateStatus(payload.id);
   }
 
   @Get(':status')
-  getOrderByStatus(@Param() payload: any) {
+  getOrderByStatus(@Param() payload: { status: Status }) {
     return this.orderService.getOrdersByStatus(payload.status);
   }
 

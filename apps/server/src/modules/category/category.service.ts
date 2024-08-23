@@ -9,33 +9,29 @@ import { ConnectionService } from '../connection/connection.service';
 @Injectable()
 export class CategoryService {
   private categoryRepo: Repository<Category>;
+  private tenantId: string;
   constructor(
     @Inject(REQUEST) private readonly request,
     private readonly connectionService: ConnectionService,
   ) {
     try {
-      const tenantId = this.request.tenantId;
-      console.log(this.request.tenantId);
-      const dataSource = this.connectionService.getDataSource(tenantId);
-      dataSource
-        .then((data) => {
-          this.categoryRepo = data.getRepository(Category);
-        })
-        .catch((e) => {
-          console.log('asds', e);
-        });
+      this.tenantId = this.request.tenantId;
     } catch (e) {
       console.log(e);
     }
   }
 
   async createCategory(payload: CreateCategory): Promise<boolean> {
-    await this.categoryRepo.save(payload);
+    (
+      await this.connectionService.getRepository(Category, this.tenantId)
+    ).insert(payload);
     return true;
   }
 
   async updateCategory(payload: UpdateCategory): Promise<boolean> {
-    await this.categoryRepo.update(
+    (
+      await this.connectionService.getRepository(Category, this.tenantId)
+    ).update(
       {
         id: payload.id,
       },
@@ -46,8 +42,10 @@ export class CategoryService {
     return true;
   }
 
-  async getCategory(id: number): Promise<Category> {
-    return await this.categoryRepo.findOne({
+  async getCategory(id: string): Promise<Category> {
+    return (
+      await this.connectionService.getRepository(Category, this.tenantId)
+    ).findOne({
       where: {
         id,
       },
@@ -56,8 +54,9 @@ export class CategoryService {
   }
 
   async getCategories(): Promise<Category[]> {
-    console.log(this.categoryRepo);
-    return await this.categoryRepo.find({
+    return (
+      await this.connectionService.getRepository(Category, this.tenantId)
+    ).find({
       relations: ['products'],
     });
   }

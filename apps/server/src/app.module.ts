@@ -10,7 +10,23 @@ import { DeviceModule } from './modules/device/device.module';
 import { ReportModule } from './modules/report/report.module';
 import { ConnectionModule } from './modules/connection/connection.module';
 import { TenantMiddleware } from './modules/connection/tenant.middleware';
+import { PusherModule } from 'nestjs-pusher';
+import { PaginationService } from './service/pagination.service';
+import { TableManagementModule } from './modules/tableManagement/tableManagement.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import * as orm from '../ormconfig';
 
+const yourPusherOptions = {
+  appId: '1819840',
+  key: 'fecb164e11761bd38ca1',
+  secret: '8823a1df5bf75832bea0',
+  cluster: 'ap2',
+};
+
+const chunkingOptions = {
+  limit: 4000, //4mb
+  enabled: true,
+};
 @Module({
   imports: [
     RouterModule.register([
@@ -38,6 +54,10 @@ import { TenantMiddleware } from './modules/connection/tenant.middleware';
         path: 'report',
         module: ReportModule,
       },
+      {
+        path: 'table-mang',
+        module: TableManagementModule,
+      },
     ]),
     AuthModule,
     CategoryModule,
@@ -45,10 +65,13 @@ import { TenantMiddleware } from './modules/connection/tenant.middleware';
     OrderModule,
     DeviceModule,
     ReportModule,
+    TableManagementModule,
     ConnectionModule.forRoot(),
+    TypeOrmModule.forRoot(orm),
+    PusherModule.forRoot(yourPusherOptions, chunkingOptions, true),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, PaginationService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

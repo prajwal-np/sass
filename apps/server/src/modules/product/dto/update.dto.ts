@@ -3,5 +3,5 @@ import { CreateProduct } from './create.dto';
 
 export class UpdateProduct extends CreateProduct {
   @ApiProperty()
-  id: number;
+  id: string;
 }

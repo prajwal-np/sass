@@ -23,7 +23,7 @@ export class ProductController {
     name: 'id',
     type: 'number',
   })
-  getProduct(@Param() params: { id: number }) {
+  getProduct(@Param() params: { id: string }) {
     return this.productService.getProduct(params.id);
   }
 

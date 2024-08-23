@@ -1,5 +1,9 @@
-import TableComponent from "../../components/Table";
+import CSButton from "../../@ui/CSButton";
 
 export default function Reports() {
-  return <TableComponent />;
+  return (
+    <div className="h-[100vh">
+      <CSButton text="Generate report" />
+    </div>
+  );
 }

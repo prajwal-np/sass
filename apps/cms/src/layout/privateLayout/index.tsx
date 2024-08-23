@@ -38,8 +38,8 @@ export default function PrivateLayout({ children }: Props) {
       },
       {
         icons: <TransactionIcon />,
-        label: "Transactions",
-        route: "/transactions",
+        label: "Devices",
+        route: "/device",
       },
       {
         icons: <ReportIcon />,

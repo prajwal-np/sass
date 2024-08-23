@@ -5,6 +5,8 @@ import { ActionType } from "..";
 import { BaseReducer } from "../type";
 
 export type AuthState = {
+  loading: boolean;
+  error: boolean;
   signIn: boolean;
 } & BaseReducer;
 

@@ -1,14 +1,15 @@
 import "./App.css";
 import { QueryClient, QueryClientProvider } from "react-query";
-import DeviceCode from "./view/DeviceCode";
-import Home from "./view/home";
 import PrivateLayout from "./view/private";
+import DeviceCode from "./view/DeviceCode";
+import usePusher from "./hooks/usePusher";
 const queryClient = new QueryClient();
 function App() {
+  const { isPaired } = usePusher();
+
   return (
     <QueryClientProvider client={queryClient}>
-      {/* <DeviceCode /> */}
-      <PrivateLayout />
+      {isPaired ? <DeviceCode /> : <PrivateLayout />}
     </QueryClientProvider>
   );
 }

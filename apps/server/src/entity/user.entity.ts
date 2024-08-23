@@ -1,10 +1,10 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Device } from './device.entity';
+// import { Device } from './device.entity';
 
 @Entity()
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({
     type: 'timestamp',
@@ -31,6 +31,6 @@ export class User {
   @Column()
   password: string;
 
-  @OneToMany(() => Device, (device) => device.user)
-  devices: Device[];
+  // @OneToMany(() => Device, (device) => device.user)
+  // devices: Device[];
 }
